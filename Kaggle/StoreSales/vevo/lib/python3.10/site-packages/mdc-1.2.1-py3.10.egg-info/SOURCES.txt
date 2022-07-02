@@ -1,0 +1,13 @@
+LICENSE.txt
+README.rst
+setup.cfg
+setup.py
+mdc/__init__.py
+mdc/context.py
+mdc/decorators.py
+mdc.egg-info/PKG-INFO
+mdc.egg-info/SOURCES.txt
+mdc.egg-info/dependency_links.txt
+mdc.egg-info/not-zip-safe
+mdc.egg-info/requires.txt
+mdc.egg-info/top_level.txt
