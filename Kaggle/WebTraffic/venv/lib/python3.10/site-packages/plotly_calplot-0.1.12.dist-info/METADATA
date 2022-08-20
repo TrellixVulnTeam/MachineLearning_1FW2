@@ -1,0 +1,47 @@
+Metadata-Version: 2.1
+Name: plotly-calplot
+Version: 0.1.12
+Summary: Calendar Plot made with Plotly
+Home-page: https://github.com/brunorosilva/plotly-calplot
+License: MIT
+Author: Bruno Rodrigues Silva
+Author-email: b.rosilva1@gmail.com
+Requires-Python: >=3.8,<4.0.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Dist: numpy (>=1.22.3,<2.0.0)
+Requires-Dist: pandas (>=1.0.5,<2.0.0)
+Requires-Dist: plotly (>=5.4.0,<6.0.0)
+Project-URL: Repository, https://github.com/brunorosilva/plotly-calplot
+Description-Content-Type: text/markdown
+
+# Calendar Heatmap with Plotly
+Making it easier to visualize and costumize time relevant or time series data with plotly interaction.
+
+New to the library? Read [this Medium article](https://medium.com/@brunorosilva/5fc322125db7).
+
+This plot is a very similar to the contribuitions available on Github and Gitlab profile pages and to [Calplot](https://github.com/tomkwok/calplot) - which is a pyplot implementation of the calendar heatmap, thus it is not interactive right off the bat.
+
+The first mention I could find of this plot being made with plotly was in [this forum post](https://community.plotly.com/t/colored-calendar-heatmap-in-dash/10907/16) and it got my attention as something it should be easily available to anyone.
+
+# Installation
+``` bash
+pip install plotly-calplot
+```
+
+# Examples
+
+In [this Medium article](https://medium.com/@brunorosilva/5fc322125db7) I covered lot's of usage methods for this library.
+``` python
+from plotly_calplot import calplot
+
+fig = calplot(df, x="date", y="value")
+fig.show()
+# you can also adjust layout and your usual plotly stuff
+```
+
+<img src="https://github.com/brunorosilva/plotly-calplot/blob/main/assets/images/example.png?raw=true">
+
