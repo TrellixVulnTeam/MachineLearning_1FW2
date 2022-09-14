@@ -1,9 +1,7 @@
 import os
 import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras import layers, Model
+from keras import Model
 from sklearn.model_selection import train_test_split
 import glob
 
@@ -107,9 +105,9 @@ def create_comb(gen_model, disc_model, vgg, lr_ip, hr_ip):
 
     return Model(inputs=[lr_ip, hr_ip], outputs=[validity, gen_features])
 
-#Load first n number of images (to train on a subset of all images)
-#For demo purposes, let us use 5000 images
-n=5000
+# Load first n number of images (to train on a subset of all images)
+# For demo purposes, let us use 5000 images
+n = 5000
 lr_list = os.listdir("/Users/matthewbroun/Desktop/cvcars/images/lr_images")[:n]
 
 lr_images = []
@@ -130,16 +128,13 @@ for img in glob.glob("/Users/matthewbroun/Desktop/cvcars/images/hr_images/*.jpg"
 lr_images = np.array(lr_images)
 hr_images = np.array(hr_images)
 
-#Scale values
+# Scale values
 lr_images = lr_images / 255.
 hr_images = hr_images / 255.
 
 
-#Split to train and test
-lr_train, lr_test, hr_train, hr_test = train_test_split(lr_images, hr_images, 
-                                                     test_size=0.33, random_state=42)
-
-
+# Split to train and test
+lr_train, lr_test, hr_train, hr_test = train_test_split(lr_images, hr_images, test_size=0.33, random_state=42)
 
 hr_shape = (hr_train.shape[1], hr_train.shape[2], hr_train.shape[3])
 lr_shape = (lr_train.shape[1], lr_train.shape[2], lr_train.shape[3])
@@ -161,18 +156,18 @@ vgg.trainable = False
 gan_model = create_comb(generator, discriminator, vgg, lr_ip, hr_ip)
 
 # 2 losses... adversarial loss and content (VGG) loss
-#AdversariaL: is defined based on the probabilities of the discriminator over all training samples
+# AdversariaL: is defined based on the probabilities of the discriminator over all training samples
 # use binary_crossentropy
 
-#Content: feature map obtained by the j-th convolution (after activation) 
-#before the i-th maxpooling layer within the VGG19 network.
+# Content: feature map obtained by the j-th convolution (after activation) 
+# before the i-th maxpooling layer within the VGG19 network.
 # MSE between the feature representations of a reconstructed image
 # and the reference image. 
 gan_model.compile(loss=["binary_crossentropy", "mse"], loss_weights=[1e-3, 1], optimizer="adam")
 gan_model.summary()
 
-#Create a list of images for LR and HR in batches from which a batch of images
-#would be fetched during training. 
+# Create a list of images for LR and HR in batches from which a batch of images
+# Would be fetched during training. 
 batch_size = 1  
 train_lr_batches = []
 train_hr_batches = []
@@ -184,120 +179,59 @@ for it in range(int(hr_train.shape[0] / batch_size)):
     
     
 epochs = 10
-#Enumerate training over epochs
+# Enumerate training over epochs
 for e in range(epochs):
-    
-    fake_label = np.zeros((batch_size, 1)) # Assign a label of 0 to all fake (generated images)
-    real_label = np.ones((batch_size, 1)) # Assign a label of 1 to all real images.
+    # Assign a label of 0 to all fake (generated images)
+    fake_label = np.zeros((batch_size, 1)) 
+    # Assign a label of 1 to all real images.
+    real_label = np.ones((batch_size, 1))
     
     # Create empty lists to populate gen and disc losses. 
     g_losses = []
     d_losses = []
     
-    #Enumerate training over batches. 
+    # Enumerate training over batches. 
     for b in tqdm(range(len(train_hr_batches))):
-        lr_imgs = train_lr_batches[b] #Fetch a batch of LR images for training
-        hr_imgs = train_hr_batches[b] #Fetch a batch of HR images for training
+        # Fetch a batch of LR images for training
+        lr_imgs = train_lr_batches[b]
+        # Fetch a batch of HR images for training
+        hr_imgs = train_hr_batches[b]
         
-        fake_imgs = generator.predict_on_batch(lr_imgs) #Fake images
+        # Fake images
+        fake_imgs = generator.predict_on_batch(lr_imgs) 
         
-        #First, train the discriminator on fake and real HR images. 
+        # First, train the discriminator on fake and real HR images. 
         discriminator.trainable = True
         d_loss_gen = discriminator.train_on_batch(fake_imgs, fake_label)
         d_loss_real = discriminator.train_on_batch(hr_imgs, real_label)
         
-        #Now, train the generator by fixing discriminator as non-trainable
+        # Now, train the generator by fixing discriminator as non-trainable
         discriminator.trainable = False
         
-        #Average the discriminator loss, just for reporting purposes. 
+        # Average the discriminator loss, just for reporting purposes. 
         d_loss = 0.5 * np.add(d_loss_gen, d_loss_real) 
         
-        #Extract VGG features, to be used towards calculating loss
+        # Extract VGG features, to be used towards calculating loss
         image_features = vgg.predict(hr_imgs)
      
-        #Train the generator via GAN. 
-        #Remember that we have 2 losses, adversarial loss and content (VGG) loss
+        # Train the generator via GAN. 
+        # Remember that we have 2 losses, adversarial loss and content (VGG) loss
         g_loss, _, _ = gan_model.train_on_batch([lr_imgs, hr_imgs], [real_label, image_features])
         
-        #Save losses to a list so we can average and report. 
+        # Save losses to a list so we can average and report. 
         d_losses.append(d_loss)
         g_losses.append(g_loss)
         
-    #Convert the list of losses to an array to make it easy to average    
+    # Convert the list of losses to an array to make it easy to average    
     g_losses = np.array(g_losses)
     d_losses = np.array(d_losses)
     
-    #Calculate the average losses for generator and discriminator
+    # Calculate the average losses for generator and discriminator
     g_loss = np.sum(g_losses, axis=0) / len(g_losses)
     d_loss = np.sum(d_losses, axis=0) / len(d_losses)
     
     # Report the progress during training. 
     print("epoch:", e+1 ,"g_loss:", g_loss, "d_loss:", d_loss)
 
-    # if (e+1) % 10 == 0: #Change the frequency for model saving, if needed
-        #Save the generator after every n epochs (Usually 10 epochs)
+    # Save the generator after every n epochs (Usually 10 epochs)
     generator.save(f"gen_e{e+1}.h5")
-
-###################################################################################
-#Test - perform super resolution using saved generator model
-from keras.models import load_model
-from numpy.random import randint
-
-generator = load_model('gen_e_10.h5', compile=False)
-
-
-[X1, X2] = [lr_test, hr_test]
-# select random example
-ix = randint(0, len(X1), 1)
-src_image, tar_image = X1[ix], X2[ix]
-
-# generate image from source
-gen_image = generator.predict(src_image)
-
-
-# plot all three images
-
-plt.figure(figsize=(16, 8))
-plt.subplot(231)
-plt.title('LR Image')
-plt.imshow(src_image[0,:,:,:])
-plt.subplot(232)
-plt.title('Superresolution')
-plt.imshow(gen_image[0,:,:,:])
-plt.subplot(233)
-plt.title('Orig. HR image')
-plt.imshow(tar_image[0,:,:,:])
-
-plt.show()
-
-
-################################################
-sreeni_lr = cv.imread("/Users/matthewbroun/Desktop/cvcars/images/hr_images/test.png")
-sreeni_hr = cv.imread("/Users/matthewbroun/Desktop/cvcars/images/lr_images/test.png")
-
-#Change images from BGR to RGB for plotting. 
-#Remember that we used cv2 to load images which loads as BGR.
-sreeni_lr = cv.cvtColor(sreeni_lr, cv.COLOR_BGR2RGB)
-sreeni_hr = cv.cvtColor(sreeni_hr, cv.COLOR_BGR2RGB)
-
-sreeni_lr = sreeni_lr / 255.
-sreeni_hr = sreeni_hr / 255.
-
-sreeni_lr = np.expand_dims(sreeni_lr, axis=0)
-sreeni_hr = np.expand_dims(sreeni_hr, axis=0)
-
-generated_sreeni_hr = generator.predict(sreeni_lr)
-
-# plot all three images
-plt.figure(figsize=(16, 8))
-plt.subplot(231)
-plt.title('LR Image')
-plt.imshow(sreeni_lr[0,:,:,:])
-plt.subplot(232)
-plt.title('Superresolution')
-plt.imshow(generated_sreeni_hr[0,:,:,:])
-plt.subplot(233)
-plt.title('Orig. HR image')
-plt.imshow(sreeni_hr[0,:,:,:])
-
-plt.show()
