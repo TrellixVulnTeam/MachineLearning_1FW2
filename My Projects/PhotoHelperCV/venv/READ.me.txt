@@ -1,0 +1,1 @@
+pip install scikit-learn keras imutils opencv-python numpy argpars matplotlib
